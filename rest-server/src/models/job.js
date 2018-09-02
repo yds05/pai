@@ -25,6 +25,7 @@ const userModel = require('./user');
 const yarnContainerScriptTemplate = require('../templates/yarnContainerScript');
 const dockerContainerScriptTemplate = require('../templates/dockerContainerScript');
 const createError = require('../util/error');
+const logger = require('../config/logger');
 
 const Hdfs = require('../util/hdfs');
 
@@ -92,7 +93,7 @@ class Job {
               'nonTransientRetriedCount', 'unKnownRetriedCount'].forEach((retry) => {
                 retries += frameworkInfo.frameworkRetryPolicyState[retry];
               });
-            return {
+            const job = {
               name: frameworkInfo.frameworkName,
               username: frameworkInfo.userName,
               state: this.convertJobState(frameworkInfo.frameworkState, frameworkInfo.applicationExitCode),
@@ -104,22 +105,21 @@ class Job {
               appExitCode: frameworkInfo.applicationExitCode,
               virtualCluster: frameworkInfo.queue,
             };
-          });
-          if (namespace) {
-            // If namespace is provided, drop all jobs without namespace, and remove all namespaces
-            jobList = jobList.filter((job) => {
-              const tildeIndex = job.name.indexOf('~');
-              if (tildeIndex === -1) return false;
+
+            const tildeIndex = job.name.indexOf('~');
+            if (tildeIndex > -1) {
+              const namespace = job.name.slice(0, tildeIndex);
+              if (namespace !== job.username) {
+                logger.warn('Found a job with different namespace and username: ', job.name, job.username);
+                job.namespace = namespace;
+              }
               job.name = job.name.slice(tildeIndex + 1);
-              return true;
-            });
-          } else {
-            // If namespace is not provided, drop all jobs with namespace
-            jobList = jobList.filter((job) => {
-              const tildeIndex = job.name.indexOf('~');
-              return (tildeIndex === -1);
-            });
-          }
+            } else {
+              job.legacy = true;
+            }
+
+            return job;
+          });
           jobList.sort((a, b) => b.createdTime - a.createdTime);
           next(jobList);
         } catch (error) {
