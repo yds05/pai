@@ -167,7 +167,7 @@ class Job {
       if (error) return next(error);
       this._initializeJobContextRootFolders((error, result) => {
         if (error) return next(error);
-        this._prepareJobContext(name, data, (error, result) => {
+        this._prepareJobContext(frameworkName, data, (error, result) => {
           if (error) return next(error);
           unirest.put(launcherConfig.frameworkPath(frameworkName))
             .headers(launcherConfig.webserviceRequestHeaders(namespace))
@@ -236,7 +236,7 @@ class Job {
   getJobConfig(userName, jobName, next) {
     const hdfs = new Hdfs(launcherConfig.webhdfsUri);
     hdfs.readFile(
-      `/Container/${userName}/${jobName}/JobConfig.json`,
+      `/Container/${userName}/${userName}~${jobName}/JobConfig.json`,
       null,
       (error, result) => {
         if (!error) {
@@ -249,7 +249,7 @@ class Job {
   }
 
   getJobSshInfo(userName, jobName, applicationId, next) {
-    const folderPathPrefix = `/Container/${userName}/${jobName}/ssh/${applicationId}`;
+    const folderPathPrefix = `/Container/${userName}/${userName}~${jobName}/ssh/${applicationId}`;
     const hdfs = new Hdfs(launcherConfig.webhdfsUri);
     hdfs.list(
       folderPathPrefix,
