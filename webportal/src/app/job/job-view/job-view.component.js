@@ -214,9 +214,13 @@ const loadJobs = (specifiedVc) => {
       },
     },
     'columns': [
-      {title: 'Job', data: 'name', render(name, type) {
+      {title: 'Job', data: null, render({legacy, name, namespace, username}, type) {
         if (type !== 'display') return name;
-        return '<a href="view.html?jobName=' + name + '">' + name + '</a>';
+        if (legacy) {
+          return '<span class="label label-warning">legacy</span> <a href="view.html?jobName=' + name + '">' + name + '</a>';
+        } else {
+          return '<a href="view.html?username=' + (namespace || username) + '&jobName=' + name + '">' + name + '</a>';
+        }
       }},
       {title: 'User', data: 'username'},
       {title: 'Virtual Cluster', data: 'virtualCluster', render(virtualCluster) {
@@ -240,7 +244,7 @@ const loadJobs = (specifiedVc) => {
       {title: 'Stop', data: null, render(job, type) {
         let hjss = getHumanizedJobStateString(job);
         return (hjss === 'Waiting' || hjss === 'Running') ?
-          '<button class="btn btn-default btn-sm" onclick="stopJob(\'' +
+          '<button class="btn btn-default btn-sm" onclick="stopJob(\'' + (job.legacy ? '' : job.namespace || job.username) + '\', \'' +
             job.name + '\')">Stop</button>':
           '<button class="btn btn-default btn-sm" disabled>Stop</button>';
       }},
@@ -257,12 +261,15 @@ const loadJobs = (specifiedVc) => {
   }).api();
 };
 
-const stopJob = (jobName) => {
+const stopJob = (namespace, jobName) => {
   const res = confirm('Are you sure to stop the job?');
   if (res) {
+    const url = namespace
+      ? `${webportalConfig.restServerUri}/api/v1/user/${namespace}/jobs/${jobName}/executionType`
+      : `${webportalConfig.restServerUri}/api/v1/jobs/${jobName}/executionType`;
     userAuth.checkToken((token) => {
       $.ajax({
-        url: `${webportalConfig.restServerUri}/api/v1/jobs/${jobName}/executionType`,
+        url: url,
         type: 'PUT',
         data: {
           value: 'STOP',
@@ -283,12 +290,15 @@ const stopJob = (jobName) => {
   }
 };
 
-const loadJobDetail = (jobName) => {
+const loadJobDetail = (namespace, jobName) => {
   loading.showLoading();
   configInfo = null;
   sshInfo = null;
+  const url = namespace
+    ? `${webportalConfig.restServerUri}/api/v1/user/${namespace}/jobs/${jobName}`
+    : `${webportalConfig.restServerUri}/api/v1/jobs/${jobName}`;
   $.ajax({
-    url: `${webportalConfig.restServerUri}/api/v1/jobs/${jobName}`,
+    url: url,
     type: 'GET',
     success: (data) => {
       loading.hideLoading();
@@ -308,7 +318,7 @@ const loadJobDetail = (jobName) => {
         //
         $('a[name=configInfoLink]').addClass('disabled');
         $.ajax({
-          url: `${webportalConfig.restServerUri}/api/v1/jobs/${jobName}/config`,
+          url: `${url}/config`,
           type: 'GET',
           success: (data) => {
             configInfo = data;
@@ -330,7 +340,7 @@ const loadJobDetail = (jobName) => {
           $('div[name^=sshInfoDiv]').attr('title', 'Job is not running.');
         } else {
           $.ajax({
-            url: `${webportalConfig.restServerUri}/api/v1/jobs/${jobName}/ssh`,
+            url: `${url}/ssh`,
             type: 'GET',
             success: (data) => {
               sshInfo = data;
@@ -403,7 +413,7 @@ $(document).ready(() => {
   $('#sidebar-menu--job-view').addClass('active');
   const query = url.parse(window.location.href, true).query;
   if (query['jobName']) {
-    loadJobDetail(query['jobName']);
+    loadJobDetail(query['username'], query['jobName']);
     $('#content-wrapper').css({'overflow': 'auto'});
   } else {
     loadJobs(query['vcName']);
