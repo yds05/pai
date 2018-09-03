@@ -233,10 +233,13 @@ class Job {
       });
   }
 
-  getJobConfig(userName, jobName, next) {
+  getJobConfig(userName, namespace, jobName, next) {
+    if (namespace) {
+      jobName = `${namespace}~${jobName}`;
+    }
     const hdfs = new Hdfs(launcherConfig.webhdfsUri);
     hdfs.readFile(
-      `/Container/${userName}/${userName}~${jobName}/JobConfig.json`,
+      `/Container/${userName}/${jobName}/JobConfig.json`,
       null,
       (error, result) => {
         if (!error) {
@@ -248,8 +251,11 @@ class Job {
     );
   }
 
-  getJobSshInfo(userName, jobName, applicationId, next) {
-    const folderPathPrefix = `/Container/${userName}/${userName}~${jobName}/ssh/${applicationId}`;
+  getJobSshInfo(userName, namespace, jobName, applicationId, next) {
+    if (namespace) {
+      jobName = `${namespace}~${jobName}`;
+    }
+    const folderPathPrefix = `/Container/${userName}/${jobName}/ssh/${applicationId}`;
     const hdfs = new Hdfs(launcherConfig.webhdfsUri);
     hdfs.list(
       folderPathPrefix,
