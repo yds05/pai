@@ -278,7 +278,11 @@ const stopJob = (namespace, jobName) => {
           Authorization: `Bearer ${token}`,
         },
         success: (data) => {
-          window.location.href = 'view.html?jobName=' + jobName;
+          if (namespace) {
+            window.location.href = 'view.html?username=' + namespace + '&jobName=' + jobName;
+          } else {
+            window.location.href = 'view.html?jobName=' + jobName;
+          }
           loadJobs();
         },
         error: (xhr, textStatus, error) => {
@@ -307,6 +311,8 @@ const loadJobDetail = (namespace, jobName) => {
       } else {
         $('#view-table').html(jobDetailTableComponent({
           jobName: data.name,
+          legacy: data.legacy,
+          namespace: data.namespace || data.username,
           jobStatus: data.jobStatus,
           taskRoles: data.taskRoles,
           grafanaUri: webportalConfig.grafanaUri,
