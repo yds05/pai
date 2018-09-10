@@ -17,6 +17,9 @@
 
 import os
 
+from ...paiLibrary.common import directory_handler
+from ...paiLibrary.common import file_handler
+from ...paiLibrary.common import linux_shell
 
 
 class local_storage:
@@ -26,13 +29,24 @@ class local_storage:
 
 
 
-    def copy_file(self):
+    def copy_file(self, src_prefix, dst_prefix):
 
-        file = next(os.walk(self.conf_path))[2]
+        file_list = file_handler.get_file_list_in_path(src_prefix)
+        dir_list = directory_handler.get_subdirectory_list(src_prefix)
+
+        directory_handler.directory_create(dst_prefix)
+        for sub_dir in dir_list:
+            self.copy_file(src_prefix + "/" + sub_dir, dst_prefix + "/" + sub_dir)
+
+
+
+
 
 
 
     def get_conf(self, path = "/tmp/pai-conf-temp/"):
+
+
 
 
 

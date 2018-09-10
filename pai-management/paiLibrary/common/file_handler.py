@@ -27,6 +27,12 @@ logger = logging.getLogger(__name__)
 
 
 
+def get_file_list_in_path(path):
+
+    return next(os.walk(path))[2]
+
+
+
 def load_yaml_config(config_path):
 
     with open(config_path, "r") as f:

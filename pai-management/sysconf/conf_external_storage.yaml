@@ -17,6 +17,8 @@
 
 #type: git
 #url: https://github.com/Microsoft/pai.git
+#branch: name prod int
+#path: path
 
 #type: local
 #path: /path/to/conf/dir
